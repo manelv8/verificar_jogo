@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Conferência de Jogos</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f4f4;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        text-align: center;
+      }
+
+      label {
+        font-weight: bold;
+        display: block;
+        margin-top: 15px;
+      }
+
+      textarea,
+      input {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+      }
+
+      textarea {
+        height: 150px;
+        resize: vertical;
+      }
+
+      button {
+        margin-top: 20px;
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        background: #007bff;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #0056b3;
+      }
+
+      .resultado {
+        margin-top: 20px;
+        background: #f9f9f9;
+        padding: 15px;
+        border-radius: 5px;
+      }
+
+      .acertos {
+        margin-top: 10px;
+        padding: 10px;
+        border-left: 5px solid #007bff;
+        background: #eef4ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Conferência de Jogos</h1>
+
+      <label for="jogos">Jogos (1 jogo por linha):</label>
+      <textarea id="jogos" placeholder="08,07,06,85,54,12"></textarea>
+
+      <label for="sorteados">Números sorteados:</label>
+      <input id="sorteados" placeholder="56,45,48,65,45,78" />
+
+      <button onclick="conferir()">Conferir Jogos</button>
+
+      <div id="resultado" class="resultado"></div>
+    </div>
+
+    <script>
+      function conferir() {
+        const jogosTexto = document.getElementById("jogos").value.trim();
+        const sorteadosTexto = document
+          .getElementById("sorteados")
+          .value.trim();
+        const resultadoDiv = document.getElementById("resultado");
+
+        if (!jogosTexto || !sorteadosTexto) {
+          resultadoDiv.innerHTML =
+            "<p>Preencha os jogos e os números sorteados.</p>";
+          return;
+        }
+
+        const sorteados = sorteadosTexto
+          .split(",")
+          .map((n) => n.trim())
+          .filter((n) => n !== "");
+
+        const jogos = jogosTexto
+          .split("\n")
+          .map((linha) =>
+            linha
+              .split(",")
+              .map((n) => n.trim())
+              .filter((n) => n !== "")
+          )
+          .filter((jogo) => jogo.length > 0);
+
+        let jogosCom4 = [];
+        let jogosCom5 = [];
+        let jogosCom6 = [];
+
+        jogos.forEach((jogo, index) => {
+          const acertos = jogo.filter((num) => sorteados.includes(num));
+          const qtd = acertos.length;
+
+          if (qtd === 4) jogosCom4.push({ index, acertos });
+          if (qtd === 5) jogosCom5.push({ index, acertos });
+          if (qtd === 6) jogosCom6.push({ index, acertos });
+        });
+
+        let html = `
+        <p><strong>Total de jogos:</strong> ${jogos.length}</p>
+      `;
+
+        html += gerarBloco("6 acertos", jogosCom6);
+        html += gerarBloco("5 acertos", jogosCom5);
+        html += gerarBloco("4 acertos", jogosCom4);
+
+        resultadoDiv.innerHTML = html;
+      }
+
+      function gerarBloco(titulo, lista) {
+        if (lista.length === 0) {
+          return `<p><strong>${titulo}:</strong> Nenhum jogo</p>`;
+        }
+
+        let html = `<div class="acertos"><strong>${titulo}:</strong><ul>`;
+
+        lista.forEach((item) => {
+          html += `<li>Jogo ${item.index + 1} → [${item.acertos.join(
+            ", "
+          )}]</li>`;
+        });
+
+        html += "</ul></div>";
+        return html;
+      }
+    </script>
+  </body>
+</html>
