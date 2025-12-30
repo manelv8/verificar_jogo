@@ -2,16 +2,17 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <title>Conferência de Jogos</title>
+    <title>Conferência de Jogos - Tempo Real</title>
+
     <style>
       body {
         font-family: Arial, sans-serif;
-        background: #f4f4f4;
+        background: #f2f2f2;
         padding: 20px;
       }
 
       .container {
-        max-width: 800px;
+        max-width: 900px;
         margin: auto;
         background: #fff;
         padding: 20px;
@@ -25,8 +26,8 @@
 
       label {
         font-weight: bold;
-        display: block;
         margin-top: 15px;
+        display: block;
       }
 
       textarea,
@@ -34,130 +35,141 @@
         width: 100%;
         padding: 10px;
         margin-top: 5px;
+        font-size: 14px;
         border-radius: 5px;
         border: 1px solid #ccc;
-        font-size: 14px;
       }
 
       textarea {
-        height: 150px;
-        resize: vertical;
-      }
-
-      button {
-        margin-top: 20px;
-        width: 100%;
-        padding: 12px;
-        font-size: 16px;
-        border: none;
-        border-radius: 5px;
-        background: #007bff;
-        color: #fff;
-        cursor: pointer;
-      }
-
-      button:hover {
-        background: #0056b3;
+        height: 140px;
       }
 
       .resultado {
         margin-top: 20px;
-        background: #f9f9f9;
-        padding: 15px;
-        border-radius: 5px;
       }
 
-      .acertos {
-        margin-top: 10px;
+      .jogo {
+        background: #f9f9f9;
         padding: 10px;
-        border-left: 5px solid #007bff;
-        background: #eef4ff;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        border-left: 5px solid #ccc;
+      }
+
+      .jogo.acerto4 {
+        border-color: #007bff;
+      }
+      .jogo.acerto5 {
+        border-color: #ff9800;
+      }
+      .jogo.acerto6 {
+        border-color: #4caf50;
+      }
+
+      .numero {
+        display: inline-block;
+        margin: 2px;
+        padding: 6px 10px;
+        border-radius: 50%;
+        background: #e0e0e0;
+        font-size: 14px;
+      }
+
+      .acertou {
+        background: #4caf50;
+        color: #fff;
+        font-weight: bold;
+      }
+
+      .resumo {
+        margin-bottom: 15px;
+        font-weight: bold;
       }
     </style>
   </head>
+
   <body>
     <div class="container">
       <h1>Conferência de Jogos</h1>
 
-      <label for="jogos">Jogos (1 jogo por linha):</label>
-      <textarea id="jogos" placeholder="08,07,06,85,54,12"></textarea>
+      <label>Jogos (1 por linha):</label>
+      <textarea id="jogos" placeholder="01,02,03,04,05,06"></textarea>
 
-      <label for="sorteados">Números sorteados:</label>
-      <input id="sorteados" placeholder="56,45,48,65,45,78" />
-
-      <button onclick="conferir()">Conferir Jogos</button>
+      <label>Números sorteados:</label>
+      <input id="sorteados" placeholder="Digite aos poucos: 01,02,03" />
 
       <div id="resultado" class="resultado"></div>
     </div>
 
     <script>
+      const jogosEl = document.getElementById("jogos");
+      const sorteadosEl = document.getElementById("sorteados");
+      const resultadoEl = document.getElementById("resultado");
+
+      jogosEl.addEventListener("input", conferir);
+      sorteadosEl.addEventListener("input", conferir);
+
       function conferir() {
-        const jogosTexto = document.getElementById("jogos").value.trim();
-        const sorteadosTexto = document
-          .getElementById("sorteados")
-          .value.trim();
-        const resultadoDiv = document.getElementById("resultado");
-
-        if (!jogosTexto || !sorteadosTexto) {
-          resultadoDiv.innerHTML =
-            "<p>Preencha os jogos e os números sorteados.</p>";
-          return;
-        }
-
-        const sorteados = sorteadosTexto
-          .split(",")
-          .map((n) => n.trim())
-          .filter((n) => n !== "");
-
-        const jogos = jogosTexto
+        const jogos = jogosEl.value
+          .trim()
           .split("\n")
-          .map((linha) =>
-            linha
+          .map((l) =>
+            l
               .split(",")
               .map((n) => n.trim())
-              .filter((n) => n !== "")
+              .filter((n) => n)
           )
-          .filter((jogo) => jogo.length > 0);
+          .filter((j) => j.length);
 
-        let jogosCom4 = [];
-        let jogosCom5 = [];
-        let jogosCom6 = [];
+        const sorteados = sorteadosEl.value
+          .split(",")
+          .map((n) => n.trim())
+          .filter((n) => n);
+
+        let qtd4 = 0,
+          qtd5 = 0,
+          qtd6 = 0;
+
+        let html = `<div class="resumo">Total de jogos: ${jogos.length}</div>`;
 
         jogos.forEach((jogo, index) => {
-          const acertos = jogo.filter((num) => sorteados.includes(num));
+          const acertos = jogo.filter((n) => sorteados.includes(n));
           const qtd = acertos.length;
 
-          if (qtd === 4) jogosCom4.push({ index, acertos });
-          if (qtd === 5) jogosCom5.push({ index, acertos });
-          if (qtd === 6) jogosCom6.push({ index, acertos });
-        });
+          if (qtd === 4) qtd4++;
+          if (qtd === 5) qtd5++;
+          if (qtd === 6) qtd6++;
 
-        let html = `
-        <p><strong>Total de jogos:</strong> ${jogos.length}</p>
+          let classe = "";
+          if (qtd === 4) classe = "acerto4";
+          if (qtd === 5) classe = "acerto5";
+          if (qtd === 6) classe = "acerto6";
+
+          html += `
+        <div class="jogo ${classe}">
+          <strong>Jogo ${index + 1} – ${qtd} acerto${
+            qtd !== 1 ? "s" : ""
+          }</strong><br>
+          ${jogo
+            .map((n) =>
+              acertos.includes(n)
+                ? `<span class="numero acertou">${n}</span>`
+                : `<span class="numero">${n}</span>`
+            )
+            .join("")}
+        </div>
       `;
-
-        html += gerarBloco("6 acertos", jogosCom6);
-        html += gerarBloco("5 acertos", jogosCom5);
-        html += gerarBloco("4 acertos", jogosCom4);
-
-        resultadoDiv.innerHTML = html;
-      }
-
-      function gerarBloco(titulo, lista) {
-        if (lista.length === 0) {
-          return `<p><strong>${titulo}:</strong> Nenhum jogo</p>`;
-        }
-
-        let html = `<div class="acertos"><strong>${titulo}:</strong><ul>`;
-
-        lista.forEach((item) => {
-          html += `<li>Jogo ${item.index + 1} → [${item.acertos.join(
-            ", "
-          )}]</li>`;
         });
 
-        html += "</ul></div>";
-        return html;
+        html += `
+      <div class="resumo">
+        6 acertos: ${qtd6} |
+        5 acertos: ${qtd5} |
+        4 acertos: ${qtd4}
+      </div>
+    `;
+
+        resultadoEl.innerHTML = html;
       }
     </script>
   </body>
