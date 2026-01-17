@@ -2,7 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <title>Conferência de Jogos - Mega-Sena & Lotofácil</title>
+    <title>Conferência de Jogos Profissional</title>
 
     <style>
       body {
@@ -22,13 +22,22 @@
 
       h1 { text-align: center; color: #333; }
 
+      .upload-section {
+        background: #f8f9fa;
+        padding: 15px;
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
       label {
         font-weight: bold;
         margin-top: 15px;
         display: block;
       }
 
-      textarea, input {
+      textarea, input[type="text"] {
         width: 100%;
         padding: 10px;
         margin-top: 5px;
@@ -38,7 +47,7 @@
         box-sizing: border-box;
       }
 
-      textarea { height: 120px; }
+      textarea { height: 150px; }
 
       .resumo {
         background: #e9ecef;
@@ -46,7 +55,6 @@
         border-radius: 6px;
         margin-top: 15px;
         font-weight: bold;
-        line-height: 1.6;
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
@@ -60,8 +68,6 @@
       }
 
       .categoria { margin-top: 20px; }
-      .categoria h3 { border-bottom: 2px solid #ddd; padding-bottom: 5px; }
-
       .jogo {
         background: #f9f9f9;
         padding: 10px;
@@ -70,9 +76,7 @@
         border-left: 5px solid #ccc;
       }
 
-      /* Cores baseadas em faixas de acertos */
-      .acerto-alto { border-color: #4caf50; } /* Ganhou algo relevante */
-      .acerto-medio { border-color: #2196f3; }
+      .acerto-alto { border-color: #4caf50; } 
       .acerto-baixo { border-color: #999; }
 
       .numero {
@@ -91,6 +95,18 @@
         color: #fff;
         font-weight: bold;
       }
+
+      .btn-import {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      
+      .btn-import:hover { background-color: #0056b3; }
     </style>
   </head>
 
@@ -98,11 +114,16 @@
     <div class="container">
       <h1>Conferência de Jogos</h1>
       
-      <label>1. Insira seus jogos (1 por linha, números separados por vírgula ou espaço):</label>
-      <textarea id="jogos" placeholder="Ex: 01,02,03,04,05..."></textarea>
+      <div class="upload-section">
+        <p><strong>Importar Arquivo (.txt)</strong></p>
+        <input type="file" id="arquivo_txt" accept=".txt" />
+      </div>
 
-      <label>2. Números sorteados:</label>
-      <input id="sorteados" placeholder="Ex: 01,05,10,12..." />
+      <label>Jogos Realizados (Formatado):</label>
+      <textarea id="jogos" placeholder="Os jogos aparecerão aqui após importar ou digitar..."></textarea>
+
+      <label>Números sorteados (Separe por vírgula):</label>
+      <input type="text" id="sorteados" placeholder="Ex: 01,02,03,04,05,06,07,08,09,10,11,12,13,14,15" />
 
       <div id="resultado"></div>
     </div>
@@ -111,8 +132,33 @@
       const jogosEl = document.getElementById("jogos");
       const sorteadosEl = document.getElementById("sorteados");
       const resultadoEl = document.getElementById("resultado");
+      const arquivoInput = document.getElementById("arquivo_txt");
 
-      // Ouve mudanças nos campos
+      // Evento para ler o arquivo enviado
+      arquivoInput.addEventListener("change", function(e) {
+        const arquivo = e.target.files[0];
+        if (!arquivo) return;
+
+        const leitor = new FileReader();
+        leitor.onload = function(e) {
+          const conteudo = e.target.result;
+          const linhas = conteudo.split("\n");
+          
+          // Filtra apenas a parte antes do "|" e limpa espaços
+          const jogosFormatados = linhas
+            .map(linha => {
+              const parteNumeros = linha.split("|")[0]; // Pega tudo antes do |
+              return parteNumeros.trim();
+            })
+            .filter(linha => linha.length > 0) // Remove linhas vazias
+            .join("\n");
+
+          jogosEl.value = jogosFormatados;
+          conferir(); // Atualiza a conferência automaticamente
+        };
+        leitor.readAsText(arquivo);
+      });
+
       jogosEl.addEventListener("input", conferir);
       sorteadosEl.addEventListener("input", conferir);
 
@@ -125,39 +171,23 @@
           return;
         }
 
-        // Processa sorteados (aceita vírgula ou espaço como separador)
-        const sorteados = txtSorteados
-          .split(/[\s,]+/)
-          .map(n => n.padStart(2, '0'))
-          .filter(n => n !== "");
-
-        // Processa jogos
-        const linhas = txtJogos.split("\n");
-        const jogos = linhas.map(linha => {
-            return linha.split(/[\s,]+/)
-                        .map(n => n.padStart(2, '0'))
-                        .filter(n => n !== "" && !isNaN(n));
+        const sorteados = txtSorteados.split(/[\s,]+/).map(n => n.padStart(2, '0')).filter(n => n);
+        const maxPossivel = sorteados.length;
+        
+        const jogos = txtJogos.split("\n").map(linha => {
+          return linha.split(/[\s,]+/).map(n => n.padStart(2, '0')).filter(n => n && !isNaN(n));
         }).filter(j => j.length > 0);
 
-        // Descobre o máximo de acertos possível (dinâmico para Mega ou Lotofácil)
-        const maxPossivel = sorteados.length;
         let grupos = {};
-        
-        // Inicializa os grupos de 0 até o total de sorteados
-        for(let i = 0; i <= maxPossivel; i++) {
-            grupos[i] = [];
-        }
+        for(let i = 0; i <= maxPossivel; i++) grupos[i] = [];
 
         jogos.forEach((jogo, index) => {
           const acertosNoJogo = jogo.filter(n => sorteados.includes(n));
-          const qtdAcertos = acertosNoJogo.length;
-          
-          if (grupos[qtdAcertos]) {
-            grupos[qtdAcertos].push({ jogo, acertosNoJogo, index });
-          }
+          const qtd = acertosNoJogo.length;
+          if (grupos[qtd]) grupos[qtd].push({ jogo, acertosNoJogo, index });
         });
 
-        // Monta o Resumo Superior
+        // Resumo
         let resumoHTML = `<div class="resumo"><strong>Total: ${jogos.length} jogos</strong>`;
         for (let i = maxPossivel; i >= 0; i--) {
             if (grupos[i].length > 0) {
@@ -166,22 +196,19 @@
         }
         resumoHTML += `</div>`;
 
-        // Monta a Listagem Detalhada
+        // Lista
         let listaHTML = "";
         for (let i = maxPossivel; i >= 0; i--) {
           if (grupos[i].length === 0) continue;
 
-          // Define classe de cor baseada na performance
-          let corClasse = "acerto-baixo";
-          if (i >= 11 && maxPossivel === 15) corClasse = "acerto-alto"; // Lotofácil premiada
-          if (i >= 4 && maxPossivel === 6) corClasse = "acerto-alto";  // Mega premiada
+          let corClasse = (i >= 11 || (i >= 4 && maxPossivel === 6)) ? "acerto-alto" : "acerto-baixo";
 
           listaHTML += `
             <div class="categoria">
               <h3>${i} acerto${i !== 1 ? "s" : ""}</h3>
               ${grupos[i].map(item => `
                   <div class="jogo ${corClasse}">
-                    <strong>Jogo ${item.index + 1}</strong> (${i} acertos)<br>
+                    <strong>Jogo ${item.index + 1}</strong><br>
                     ${item.jogo.map(n => 
                         item.acertosNoJogo.includes(n) 
                         ? `<span class="numero acertou">${n}</span>` 
@@ -191,7 +218,6 @@
               `).join("")}
             </div>`;
         }
-
         resultadoEl.innerHTML = resumoHTML + listaHTML;
       }
     </script>
